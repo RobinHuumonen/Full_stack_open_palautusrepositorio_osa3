@@ -1,1 +1,2 @@
-Full_stack_open_palautusrepositorio_osa3
+Linkki sovellukseen:
+https://puhelinluettelo-palvelinpuoli.herokuapp.com/
