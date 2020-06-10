@@ -2,12 +2,22 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
-const Note = require('./models/person')
+const Person = require('./models/person')
 const app = express()
 
-app.use(cors())
 app.use(express.static('build'))
 app.use(express.json())
+app.use(cors())
+
+const errorHandler = (error, req, res, next) => {
+  console.log(error.message);
+  
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformed id' })
+  }
+}
+
+app.use(errorHandler)
 
 morgan.token('showPOSTData', function (req, res) {
   return JSON.stringify(req.body) })
@@ -52,8 +62,8 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/persons', (req, res) => {
-  Note.find({}).then(notes => {
-    res.json(notes)
+  Person.find({}).then(persons => {
+    res.json(persons)
   })
 })
 
@@ -72,20 +82,23 @@ app.get('/api/info', (req, res) => {
 
 })
 
-app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-  if (person) {
-    res.json(person)
-  } else {
-    res.status(404).end()
-  }
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then(person => {
+      if (person) {
+        res.json(person)
+      } else {
+        res.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  persons = persons.filter(person => person.id !== id)
-  res.status(204).end()
+  Person.findByIdAndRemove(req.params.id)
+    .then(result => {
+      res.status(204).end()
+    })
 })
 
 const generateId = () => {
@@ -120,17 +133,38 @@ app.post('/api/persons',(req, res) => {
     })
   }
 
-  const person = {
+  const person = new Person({
       name: body.name,
       number: body.number,
-      id: generateId()
-  }
+  })
 
-  persons = persons.concat(person)
-  res.json(person)
+  person.save().then(savedPerson => {
+    res.json(savedPerson)
+  })
 })
 
-const PORT = process.env.PORT || 3001
+app.put('/api/persons/:id', (req, res, next) => {
+  const body = req.body
+  
+  if (body.number === null || body.number.length === 0) {
+    return res.status(400).json({
+      error: 'Missing number'
+    })
+  } 
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  }
+
+  Person.findByIdAndUpdate(req.params.id, person, {new: true})
+    .then(updatePerson => {
+      res.json(updatePerson)
+    })
+    .catch(error => next(error))
+})
+
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
