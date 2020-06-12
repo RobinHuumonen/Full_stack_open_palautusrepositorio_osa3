@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-// Prosessiargumentti indeksillä 2 = 1.
 
 if (process.argv.length < 3) {
   console.log('give password as argument')
@@ -25,8 +24,6 @@ const personSchema = new mongoose.Schema({
   }
 })
 
-personSchema.plugin(uniqueValidator)
-
 const Person = mongoose.model('Person', personSchema)
 
 const person = new Person({
@@ -35,16 +32,16 @@ const person = new Person({
 })
 
 if (process.argv.length >= 4) {
-  person.save().then(response => {
+  person.save().then(() => {
     console.log('person saved!')
     mongoose.connection.close()
   })
 } else {
-  console.log('Phone book: ');
+  console.log('Phone book: ')
   Person.find({}).then(result => {
     result.forEach(person => {
-      console.log(person.name, person.number);
-      
+      console.log(person.name, person.number)
+
     })
     mongoose.connection.close()
   })

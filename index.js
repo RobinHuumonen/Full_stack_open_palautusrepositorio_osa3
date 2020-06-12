@@ -9,43 +9,43 @@ app.use(express.static('build'))
 app.use(express.json())
 app.use(cors())
 
-morgan.token('showPOSTData', function (req, res) {
+morgan.token('showPOSTData', function (req) {
   return JSON.stringify(req.body) })
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :showPOSTData'))
 
-let persons = [
-  { 
-    name: "Arto Hellas", 
-    number: "040-123456",
+/* let persons = [
+  {
+    name: 'Arto Hellas',
+    number: '040-123456',
     id: 1
   },
-{ 
-  name: "Ada Lovelace", 
-  number: "39-44-5323523",
-  id: 2
-},
-{ 
-  name: "Dan Abramov", 
-  number: "12-43-234345",
-  id: 3
-},
-{ 
-  name: "Mary Poppendieck", 
-  number: "39-23-6423122",
-  id: 4
-},
-{
-  name: "Ryan Frost",
-  number: "672-5673",
-  id: 5
-},
-{
-  name: "Guy C. Roberts",
-  number: "1-748-576-8229",
-  id: 6
-}
-]
+  {
+    name: 'Ada Lovelace',
+    number: '39-44-5323523',
+    id: 2
+  },
+  {
+    name: 'Dan Abramov',
+    number: '12-43-234345',
+    id: 3
+  },
+  {
+    name: 'Mary Poppendieck',
+    number: '39-23-6423122',
+    id: 4
+  },
+  {
+    name: 'Ryan Frost',
+    number: '672-5673',
+    id: 5
+  },
+  {
+    name: 'Guy C. Roberts',
+    number: '1-748-576-8229',
+    id: 6
+  }
+] */
 
 app.get('/', (req, res) => {
   res.send('<h1>Works</h1>')
@@ -90,13 +90,13 @@ app.get('/api/persons/:id', (req, res, next) => {
 
 app.delete('/api/persons/:id', (req, res) => {
   Person.findByIdAndRemove(req.params.id)
-    .then(result => {
+    .then(() => {
       res.status(204).end()
     })
 })
 
-const generateId = () => {
-  const id = persons.length > 0 
+/* const generateId = () => {
+  const id = persons.length > 0
     ? Math.floor(Math.random() * Math.pow(10, 3))
     : 0
   if (persons.some(person => person.id === id)) {
@@ -106,10 +106,10 @@ const generateId = () => {
     return id
   }
 }
-
+ */
 app.post('/api/persons',(req, res, next) => {
   const body = req.body
-/*   if (body.name === null || body.name.length === 0) {
+  /*   if (body.name === null || body.name.length === 0) {
       return res.status(400).json({
         error: 'Missing name'
       })
@@ -128,8 +128,8 @@ app.post('/api/persons',(req, res, next) => {
   } */
 
   const person = new Person({
-      name: body.name,
-      number: body.number,
+    name: body.name,
+    number: body.number,
   })
 
   person
@@ -142,19 +142,19 @@ app.post('/api/persons',(req, res, next) => {
 
 app.put('/api/persons/:id', (req, res, next) => {
   const body = req.body
-  
+
   if (body.number === null || body.number.length === 0) {
     return res.status(400).json({
       error: 'Missing number'
     })
-  } 
+  }
 
   const person = {
     name: body.name,
     number: body.number,
   }
 
-  Person.findByIdAndUpdate(req.params.id, person, {new: true})
+  Person.findByIdAndUpdate(req.params.id, person, { new: true })
     .then(updatePerson => {
       res.json(updatePerson)
     })
@@ -162,12 +162,12 @@ app.put('/api/persons/:id', (req, res, next) => {
 })
 
 const errorHandler = (error, req, res, next) => {
-  
+
   if (error.name === 'CastError') {
     return res.status(400).send({ error: 'malformed id' })
   } else if (error.name === 'ValidationError') {
     return res.status(400).json({ error: error.message })
-  } 
+  }
   next(error)
 }
 
