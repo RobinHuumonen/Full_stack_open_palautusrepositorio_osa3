@@ -9,16 +9,6 @@ app.use(express.static('build'))
 app.use(express.json())
 app.use(cors())
 
-const errorHandler = (error, req, res, next) => {
-  console.log(error.message);
-  
-  if (error.name === 'CastError') {
-    return res.status(400).send({ error: 'malformed id' })
-  }
-}
-
-app.use(errorHandler)
-
 morgan.token('showPOSTData', function (req, res) {
   return JSON.stringify(req.body) })
 
@@ -68,18 +58,22 @@ app.get('/api/persons', (req, res) => {
 })
 
 app.get('/api/info', (req, res) => {
-  const info = {
-    phonebookSize: persons.length,
-    timeStamp: new Date(),
+  Person.find({}).countDocuments({}).then(persons => {
+    getInfo(persons)
+  })
+  function getInfo(count) {
+    const info = {
+      phoneBookSize: count || 'not available amount of',
+      timeStamp: new Date(),
+    }
+    res.send(
+      `<div>
+        <p>Phone book has info for ${info.phoneBookSize} people
+        </p>
+        <p>${info.timeStamp}</p>
+      </div>`
+    )
   }
-  res.send(
-    `<div>
-      <p>Phone book has info for ${info.phonebookSize} people
-      </p>
-      <p>${info.timeStamp}</p>
-    </div>`
-  )
-
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -113,9 +107,9 @@ const generateId = () => {
   }
 }
 
-app.post('/api/persons',(req, res) => {
+app.post('/api/persons',(req, res, next) => {
   const body = req.body
-  if (body.name === null || body.name.length === 0) {
+/*   if (body.name === null || body.name.length === 0) {
       return res.status(400).json({
         error: 'Missing name'
       })
@@ -131,16 +125,19 @@ app.post('/api/persons',(req, res) => {
     return res.status(400).json({
       error: 'Name must be unique'
     })
-  }
+  } */
 
   const person = new Person({
       name: body.name,
       number: body.number,
   })
 
-  person.save().then(savedPerson => {
-    res.json(savedPerson)
-  })
+  person
+    .save()
+    .then(savedPerson => {
+      res.json(savedPerson)
+    })
+    .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (req, res, next) => {
@@ -163,6 +160,18 @@ app.put('/api/persons/:id', (req, res, next) => {
     })
     .catch(error => next(error))
 })
+
+const errorHandler = (error, req, res, next) => {
+  
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformed id' })
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message })
+  } 
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
